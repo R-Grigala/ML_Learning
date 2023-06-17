@@ -66,6 +66,7 @@ class Node:
                 if puz[i][j] == x:
                     return i, j
 
+
 class Puzzle:
     def __init__(self, size):
         """ Initialize the puzzle size by the specified size, open and closed lists to empty """
@@ -86,7 +87,7 @@ class Puzzle:
         return self.h(start.data, goal) + start.level
 
     def h(self, start, goal):
-        """ Calculate the difference between the given puzzles """
+        """ Calculates the difference between the given puzzles """
         temp = 0
         for i in range(0, self.n):
             for j in range(0, self.n):
@@ -94,12 +95,57 @@ class Puzzle:
                     temp += 1
         return temp
 
+    def is_solvable(self, start, goal):
+        """ Check if the puzzle is solvable """
+        start_inversions = self.count_inversions(start)
+        goal_inversions = self.count_inversions(goal)
+
+        if self.n % 2 == 0:
+            # For even-sized puzzles
+            start_blank_row = self.find_blank_row(start)
+            goal_blank_row = self.find_blank_row(goal)
+
+            # Adjust the inversion counts for even-sized puzzles
+            start_inversions += start_blank_row
+            goal_inversions += goal_blank_row
+
+        return start_inversions % 2 == goal_inversions % 2
+
+    def count_inversions(self, puzzle):
+        """ Count the number of inversions in the puzzle """
+        flat_puzzle = [val for row in puzzle for val in row if val != '_']
+        inversions = 0
+        for i in range(len(flat_puzzle)):
+            for j in range(i + 1, len(flat_puzzle)):
+                if flat_puzzle[i] > flat_puzzle[j]:
+                    inversions += 1
+        return inversions
+
+    def find_blank_row(self, puzzle):
+        """ Find the row index containing the blank space """
+        for i in range(self.n):
+            if '_' in puzzle[i]:
+                return i
+        return -1
+
+    def is_goal_state(self, current, goal):
+        """ Check if the current node's state matches the goal state """
+        for i in range(self.n):
+            for j in range(self.n):
+                if current[i][j] != goal[i][j]:
+                    return False
+        return True
+
     def process(self):
         """ Accept Start and Goal Puzzle state """
         print("Enter the start state matrix:")
         start = self.accept()
         print("Enter the goal state matrix:")
         goal = self.accept()
+
+        if not self.is_solvable(start, goal):
+            print("The given puzzle configuration is unsolvable.")
+            return
 
         start = Node(start, 0, 0)
         start.fval = self.f(start, goal)
@@ -116,8 +162,8 @@ class Puzzle:
                 for j in i:
                     print(j, end=" ")
                 print("")
-            """ If the difference between the current and goal node is 0, we have reached the goal node """
-            if self.h(cur.data, goal) == 0:
+            """ If the current node's state matches the goal state, we have reached the goal node """
+            if self.is_goal_state(cur.data, goal):
                 break
             for i in cur.generate_child():
                 i.fval = self.f(i, goal)
@@ -125,8 +171,9 @@ class Puzzle:
             self.closed.append(cur)
             del self.open[0]
 
-            """ sort the open list based on f value """
+            """ Sort the open list based on f value """
             self.open.sort(key=lambda x: x.fval, reverse=False)
+
 
 puz = Puzzle(3)
 puz.process()
