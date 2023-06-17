@@ -118,3 +118,6 @@ class Puzzle:
 
 puz = Puzzle(3)
 puz.process()
+
+
+
